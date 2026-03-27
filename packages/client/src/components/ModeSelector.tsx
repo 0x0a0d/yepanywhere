@@ -17,6 +17,13 @@ const MODE_LABELS: Record<PermissionMode, string> = {
   bypassPermissions: "Bypass permissions",
 };
 
+const MODE_SHORT_LABELS: Record<PermissionMode, string> = {
+  default: "Ask",
+  acceptEdits: "Edit",
+  plan: "Plan",
+  bypassPermissions: "Bypass",
+};
+
 // Breakpoint for desktop behavior (should match CSS)
 const DESKTOP_BREAKPOINT = 769;
 
@@ -147,7 +154,9 @@ export function ModeSelector({
   };
 
   // Display text: show "Hold" when held, otherwise show mode label
-  const displayLabel = isHeld ? t("modeHold" as never) : MODE_LABELS[mode];
+  const desktopLabel = isHeld ? t("modeHold" as never) : MODE_LABELS[mode];
+  const mobileLabel = isHeld ? t("modeHold" as never) : MODE_SHORT_LABELS[mode];
+  const displayLabel = isDesktop ? desktopLabel : mobileLabel;
   const displayDotClass = isHeld ? "mode-hold" : `mode-${mode}`;
 
   // Shared options content used by both mobile sheet and desktop dropdown
