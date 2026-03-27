@@ -121,6 +121,8 @@ export function useFetchedImage(apiPath: string | null): RemoteImageResult {
   const [error, setError] = useState<string | null>(null);
   const blobUrlRef = useRef<string | null>(null);
 
+  const remoteMode = isRemoteMode();
+
   useEffect(() => {
     if (!apiPath) {
       if (blobUrlRef.current) {
@@ -129,12 +131,6 @@ export function useFetchedImage(apiPath: string | null): RemoteImageResult {
       }
       setBlobUrl(null);
       setError(null);
-      return;
-    }
-
-    const connection = getGlobalConnection();
-    if (!connection) {
-      setError("No connection available");
       return;
     }
 
@@ -148,8 +144,19 @@ export function useFetchedImage(apiPath: string | null): RemoteImageResult {
       setBlobUrl(null);
     }
 
-    connection
-      .fetchBlob(apiPath)
+    const fetchImage = remoteMode
+      ? (() => {
+          const connection = getGlobalConnection();
+          if (!connection)
+            return Promise.reject(new Error("No connection available"));
+          return connection.fetchBlob(apiPath);
+        })()
+      : fetch(apiPath, { credentials: "include" }).then((res) => {
+          if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+          return res.blob();
+        });
+
+    fetchImage
       .then((blob) => {
         if (cancelled) return;
         const url = URL.createObjectURL(blob);
@@ -171,7 +178,7 @@ export function useFetchedImage(apiPath: string | null): RemoteImageResult {
         blobUrlRef.current = null;
       }
     };
-  }, [apiPath]);
+  }, [apiPath, remoteMode]);
 
   if (!apiPath) {
     return { url: null, loading: false, error: null };
