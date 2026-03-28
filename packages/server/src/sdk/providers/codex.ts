@@ -28,6 +28,7 @@ import type {
   UserMessage,
 } from "../types.js";
 import type { ToolApprovalResult } from "../types.js";
+import { handleMcpServerElicitationRequest } from "./codex-elicitation.js";
 import type {
   AskForApproval as CodexAskForApproval,
   ErrorNotification as CodexErrorNotification,
@@ -172,46 +173,6 @@ interface AppServerModel {
   displayName?: string;
   description?: string;
   upgrade?: string | null;
-}
-
-interface CodexMcpElicitationSchemaProperty {
-  type?: unknown;
-  title?: unknown;
-  description?: unknown;
-  enum?: unknown;
-}
-
-interface CodexMcpElicitationRequestParams {
-  message?: string;
-  serverName?: string;
-  requestedSchema?: {
-    type?: unknown;
-    properties?: Record<string, CodexMcpElicitationSchemaProperty>;
-    required?: unknown;
-  };
-  url?: string;
-}
-
-interface CodexElicitationField {
-  field: string;
-  questionKey: string;
-  type: "string" | "number" | "integer" | "boolean";
-}
-
-interface CodexElicitationToolInput {
-  questions: Array<{
-    question: string;
-    header: string;
-    options: Array<{ label: string; description: string }>;
-    multiSelect: boolean;
-  }>;
-  elicitationFields: CodexElicitationField[];
-  answers?: Record<string, string>;
-}
-
-interface CodexMcpElicitationResponse {
-  action: "accept" | "decline" | "cancel";
-  content?: Record<string, unknown>;
 }
 
 interface TokenUsageSnapshot {
@@ -1652,76 +1613,14 @@ export class CodexProvider implements AgentProvider {
     request: JsonRpcServerRequest,
     options: StartSessionOptions,
     signal: AbortSignal,
-  ): Promise<CodexMcpElicitationResponse> {
-    const elicitation = this.asMcpElicitationRequestParams(request.params);
-    if (!elicitation) {
-      log.warn(
-        { method: request.method, requestId: request.id },
-        "Codex elicitation params invalid; canceling",
-      );
-      return { action: "cancel" };
-    }
-
-    if (elicitation.url) {
-      const action = await this.resolveApprovalDecision(
-        options,
-        "OpenUrl",
-        {
-          url: elicitation.url,
-          message: elicitation.message ?? null,
-          serverName: elicitation.serverName ?? null,
-        },
-        signal,
-        "accept",
-        "decline",
-      );
-      return { action };
-    }
-
-    const toolInput = this.buildMcpElicitationToolInput(elicitation);
-    if (!toolInput) {
-      log.warn(
-        {
-          method: request.method,
-          requestId: request.id,
-          serverName: elicitation.serverName ?? null,
-        },
-        "Codex elicitation schema unsupported; canceling",
-      );
-      return { action: "cancel" };
-    }
-
-    if (!options.onToolApproval) {
-      log.warn(
-        { method: request.method, requestId: request.id },
-        "No onToolApproval handler available; canceling Codex elicitation",
-      );
-      return { action: "cancel" };
-    }
-
-    let result: ToolApprovalResult;
-    try {
-      result = await options.onToolApproval("AskUserQuestion", toolInput, {
-        signal,
-      });
-    } catch (error) {
-      log.warn(
-        { method: request.method, requestId: request.id, error },
-        "onToolApproval threw while handling Codex elicitation",
-      );
-      return { action: "cancel" };
-    }
-
-    if (result.behavior !== "allow") {
-      return { action: "decline" };
-    }
-
-    const updatedInput = (result.updatedInput ??
-      toolInput) as CodexElicitationToolInput;
-    return {
-      action: "accept",
-      content: this.buildMcpElicitationContent(updatedInput),
-    };
+  ): Promise<{
+    action: "accept" | "decline" | "cancel";
+    content?: Record<string, unknown>;
+  }> {
+    return await handleMcpServerElicitationRequest(request, options, signal, {
+      getOptionalString: (value) => this.getOptionalString(value),
+      resolveApprovalDecision: this.resolveApprovalDecision.bind(this),
+    });
   }
 
   private convertNotificationToSDKMessages(
@@ -2109,126 +2008,6 @@ export class CodexProvider implements AgentProvider {
       return null;
     }
     return params as ToolRequestUserInputParams;
-  }
-
-  private asMcpElicitationRequestParams(
-    params: unknown,
-  ): CodexMcpElicitationRequestParams | null {
-    if (!params || typeof params !== "object") return null;
-    return params as CodexMcpElicitationRequestParams;
-  }
-
-  private buildMcpElicitationToolInput(
-    params: CodexMcpElicitationRequestParams,
-  ): CodexElicitationToolInput | null {
-    const schema = params.requestedSchema;
-    const properties =
-      schema?.properties && typeof schema.properties === "object"
-        ? schema.properties
-        : null;
-    if (!properties || Object.keys(properties).length === 0) {
-      return null;
-    }
-
-    const questions: CodexElicitationToolInput["questions"] = [];
-    const elicitationFields: CodexElicitationField[] = [];
-
-    for (const [field, property] of Object.entries(properties)) {
-      const rawType =
-        typeof property.type === "string" ? property.type : undefined;
-      const fieldType: CodexElicitationField["type"] =
-        rawType === "boolean" ||
-        rawType === "number" ||
-        rawType === "integer" ||
-        rawType === "string"
-          ? rawType
-          : Array.isArray(property.enum)
-            ? "string"
-            : "string";
-
-      if (rawType === "object" || rawType === "array") {
-        return null;
-      }
-
-      const title = this.getOptionalString(property.title) ?? field;
-      const description = this.getOptionalString(property.description) ?? "";
-      const questionKey = description ? `${title}: ${description}` : title;
-      const enumValues = Array.isArray(property.enum)
-        ? property.enum.filter(
-            (value): value is string | number | boolean =>
-              typeof value === "string" ||
-              typeof value === "number" ||
-              typeof value === "boolean",
-          )
-        : [];
-
-      const options =
-        fieldType === "boolean"
-          ? [
-              { label: "Yes", description: "" },
-              { label: "No", description: "" },
-            ]
-          : enumValues.map((value) => ({
-              label: String(value),
-              description: "",
-            }));
-
-      questions.push({
-        question: questionKey,
-        header: title,
-        options,
-        multiSelect: false,
-      });
-      elicitationFields.push({
-        field,
-        questionKey,
-        type: fieldType,
-      });
-    }
-
-    return {
-      questions,
-      elicitationFields,
-    };
-  }
-
-  private buildMcpElicitationContent(
-    input: CodexElicitationToolInput,
-  ): Record<string, unknown> {
-    const answers =
-      input.answers && typeof input.answers === "object" ? input.answers : {};
-    const content: Record<string, unknown> = {};
-
-    for (const field of input.elicitationFields) {
-      const value = answers[field.questionKey];
-      if (typeof value !== "string") continue;
-
-      switch (field.type) {
-        case "boolean":
-          content[field.field] =
-            value.toLowerCase() === "yes"
-              ? true
-              : value.toLowerCase() === "no"
-                ? false
-                : value.toLowerCase() === "true";
-          break;
-        case "number": {
-          const parsed = Number(value);
-          content[field.field] = Number.isFinite(parsed) ? parsed : value;
-          break;
-        }
-        case "integer": {
-          const parsed = Number.parseInt(value, 10);
-          content[field.field] = Number.isFinite(parsed) ? parsed : value;
-          break;
-        }
-        case "string":
-          content[field.field] = value;
-          break;
-      }
-    }
-
-    return content;
   }
 
   private asItemStartedNotification(

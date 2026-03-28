@@ -516,7 +516,7 @@ describe("CodexProvider Event Normalization", () => {
 describe("CodexProvider MCP elicitation", () => {
   it("maps form elicitation requests to AskUserQuestion and returns structured content", async () => {
     const provider = new CodexProvider() as unknown as {
-      handleMcpServerElicitationRequest: (
+      handleServerRequestApproval: (
         request: { id: number; method: string; params?: unknown },
         options: { onToolApproval: (...args: unknown[]) => Promise<unknown> },
         signal: AbortSignal,
@@ -540,7 +540,7 @@ describe("CodexProvider MCP elicitation", () => {
       },
     });
 
-    const response = await provider.handleMcpServerElicitationRequest(
+    const response = await provider.handleServerRequestApproval(
       {
         id: 7,
         method: "mcpServer/elicitation/request",
@@ -583,7 +583,7 @@ describe("CodexProvider MCP elicitation", () => {
 
   it("maps URL elicitation requests to approval flow", async () => {
     const provider = new CodexProvider() as unknown as {
-      handleMcpServerElicitationRequest: (
+      handleServerRequestApproval: (
         request: { id: number; method: string; params?: unknown },
         options: { onToolApproval: (...args: unknown[]) => Promise<unknown> },
         signal: AbortSignal,
@@ -591,7 +591,7 @@ describe("CodexProvider MCP elicitation", () => {
     };
 
     const onToolApproval = vi.fn().mockResolvedValue({ behavior: "allow" });
-    const response = await provider.handleMcpServerElicitationRequest(
+    const response = await provider.handleServerRequestApproval(
       {
         id: 8,
         method: "mcpServer/elicitation/request",
@@ -615,6 +615,156 @@ describe("CodexProvider MCP elicitation", () => {
       expect.any(Object),
     );
     expect(response).toEqual({ action: "accept" });
+  });
+
+  it("cancels invalid elicitation params", async () => {
+    const provider = new CodexProvider() as unknown as {
+      handleServerRequestApproval: (
+        request: { id: number; method: string; params?: unknown },
+        options: { onToolApproval: (...args: unknown[]) => Promise<unknown> },
+        signal: AbortSignal,
+      ) => Promise<{ action: string; content?: Record<string, unknown> }>;
+    };
+
+    const onToolApproval = vi.fn();
+    const response = await provider.handleServerRequestApproval(
+      {
+        id: 9,
+        method: "mcpServer/elicitation/request",
+        params: {
+          serverName: "demo-mcp",
+          message: "missing url and schema",
+        },
+      },
+      { onToolApproval },
+      new AbortController().signal,
+    );
+
+    expect(onToolApproval).not.toHaveBeenCalled();
+    expect(response).toEqual({ action: "cancel" });
+  });
+
+  it("cancels unsupported object and array schemas", async () => {
+    const provider = new CodexProvider() as unknown as {
+      handleServerRequestApproval: (
+        request: { id: number; method: string; params?: unknown },
+        options: { onToolApproval: (...args: unknown[]) => Promise<unknown> },
+        signal: AbortSignal,
+      ) => Promise<{ action: string; content?: Record<string, unknown> }>;
+    };
+
+    const onToolApproval = vi.fn();
+
+    const objectResponse = await provider.handleServerRequestApproval(
+      {
+        id: 10,
+        method: "mcpServer/elicitation/request",
+        params: {
+          serverName: "demo-mcp",
+          requestedSchema: {
+            type: "object",
+            properties: {
+              config: { type: "object", title: "Config" },
+            },
+          },
+        },
+      },
+      { onToolApproval },
+      new AbortController().signal,
+    );
+
+    const arrayResponse = await provider.handleServerRequestApproval(
+      {
+        id: 11,
+        method: "mcpServer/elicitation/request",
+        params: {
+          serverName: "demo-mcp",
+          requestedSchema: {
+            type: "object",
+            properties: {
+              items: { type: "array", title: "Items" },
+            },
+          },
+        },
+      },
+      { onToolApproval },
+      new AbortController().signal,
+    );
+
+    expect(onToolApproval).not.toHaveBeenCalled();
+    expect(objectResponse).toEqual({ action: "cancel" });
+    expect(arrayResponse).toEqual({ action: "cancel" });
+  });
+
+  it("declines form elicitation when the user denies it", async () => {
+    const provider = new CodexProvider() as unknown as {
+      handleServerRequestApproval: (
+        request: { id: number; method: string; params?: unknown },
+        options: { onToolApproval: (...args: unknown[]) => Promise<unknown> },
+        signal: AbortSignal,
+      ) => Promise<{ action: string; content?: Record<string, unknown> }>;
+    };
+
+    const onToolApproval = vi.fn().mockResolvedValue({ behavior: "deny" });
+    const response = await provider.handleServerRequestApproval(
+      {
+        id: 12,
+        method: "mcpServer/elicitation/request",
+        params: {
+          serverName: "demo-mcp",
+          requestedSchema: {
+            type: "object",
+            properties: {
+              name: { type: "string", title: "Name" },
+            },
+          },
+        },
+      },
+      { onToolApproval },
+      new AbortController().signal,
+    );
+
+    expect(onToolApproval).toHaveBeenCalledWith(
+      "AskUserQuestion",
+      expect.any(Object),
+      expect.any(Object),
+    );
+    expect(response).toEqual({ action: "decline" });
+  });
+
+  it("declines URL elicitation when the user denies it", async () => {
+    const provider = new CodexProvider() as unknown as {
+      handleServerRequestApproval: (
+        request: { id: number; method: string; params?: unknown },
+        options: { onToolApproval: (...args: unknown[]) => Promise<unknown> },
+        signal: AbortSignal,
+      ) => Promise<{ action: string; content?: Record<string, unknown> }>;
+    };
+
+    const onToolApproval = vi.fn().mockResolvedValue({ behavior: "deny" });
+    const response = await provider.handleServerRequestApproval(
+      {
+        id: 13,
+        method: "mcpServer/elicitation/request",
+        params: {
+          serverName: "demo-mcp",
+          url: "https://example.com/consent",
+        },
+      },
+      { onToolApproval },
+      new AbortController().signal,
+    );
+
+    expect(onToolApproval).toHaveBeenCalledWith(
+      "OpenUrl",
+      {
+        url: "https://example.com/consent",
+        message: null,
+        serverName: "demo-mcp",
+      },
+      expect.any(Object),
+    );
+    expect(response).toEqual({ action: "decline" });
   });
 });
 
