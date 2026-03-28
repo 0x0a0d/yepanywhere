@@ -114,6 +114,18 @@ export interface GlobalSessionsResponse {
   projects: ProjectOption[];
 }
 
+export interface ShellInfo {
+  id: string;
+  projectId: string;
+  projectName: string;
+  cwd: string;
+  command: string;
+  startedAt: string;
+  exitedAt?: string;
+  state: "running" | "exited";
+  exitCode?: number | null;
+}
+
 export interface SessionOptions {
   mode?: PermissionMode;
   /** Model ID (e.g., "sonnet", "opus", "qwen2.5-coder:0.5b") */
@@ -371,6 +383,39 @@ export const api = {
 
   getProject: (projectId: string) =>
     fetchJSON<{ project: Project }>(`/projects/${projectId}`),
+
+  openProjectTerminal: (projectId: string) =>
+    fetchJSON<{ shell: ShellInfo }>(`/shells`, {
+      method: "POST",
+      body: JSON.stringify({ projectId }),
+    }),
+
+  getShells: () => fetchJSON<{ shells: ShellInfo[] }>("/shells"),
+
+  getShell: (shellId: string) =>
+    fetchJSON<{ shell: ShellInfo }>(`/shells/${shellId}`),
+
+  getShellOutput: (shellId: string, after = 0) =>
+    fetchJSON<{ chunks: Array<{ seq: number; data: string }> }>(
+      `/shells/${shellId}/output?after=${after}`,
+    ),
+
+  writeShellInput: (shellId: string, data: string) =>
+    fetchJSON<{ ok: boolean }>(`/shells/${shellId}/input`, {
+      method: "POST",
+      body: JSON.stringify({ data }),
+    }),
+
+  resizeShell: (shellId: string, cols: number, rows: number) =>
+    fetchJSON<{ ok: boolean }>(`/shells/${shellId}/resize`, {
+      method: "POST",
+      body: JSON.stringify({ cols, rows }),
+    }),
+
+  closeShell: (shellId: string) =>
+    fetchJSON<{ ok: boolean }>(`/shells/${shellId}`, {
+      method: "DELETE",
+    }),
 
   getSession: (
     projectId: string,

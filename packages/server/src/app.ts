@@ -58,6 +58,7 @@ import { createServerInfoRoutes } from "./routes/server-info.js";
 import { createSessionsRoutes } from "./routes/sessions.js";
 import { createSettingsRoutes } from "./routes/settings.js";
 import { createSharingRoutes } from "./routes/sharing.js";
+import { createShellRoutes } from "./routes/shells.js";
 import { ClaudeOllamaProvider } from "./sdk/providers/claude-ollama.js";
 
 import { createLocalImageRoutes } from "./routes/local-image.js";
@@ -75,6 +76,7 @@ import type { NetworkBindingService } from "./services/NetworkBindingService.js"
 import type { RelayClientService } from "./services/RelayClientService.js";
 import type { ServerSettingsService } from "./services/ServerSettingsService.js";
 import type { SharingService } from "./services/SharingService.js";
+import { ShellService } from "./services/ShellService.js";
 import { CodexSessionReader } from "./sessions/codex-reader.js";
 import { GeminiSessionReader } from "./sessions/gemini-reader.js";
 import { OpenCodeSessionReader } from "./sessions/opencode-reader.js";
@@ -192,6 +194,7 @@ export interface AppResult {
 
 export function createApp(options: AppOptions): AppResult {
   const app = new Hono<{ Bindings: HttpBindings }>();
+  const shellService = new ShellService();
 
   // Security middleware: host validation, CORS, custom header requirement
   app.use("/api/*", hostCheckMiddleware);
@@ -533,6 +536,13 @@ export function createApp(options: AppOptions): AppResult {
       scanner,
       readerFactory,
       sessionIndexService: options.sessionIndexService,
+    }),
+  );
+  app.route(
+    "/api/shells",
+    createShellRoutes({
+      scanner,
+      shellService,
     }),
   );
 
