@@ -5141,6 +5141,10 @@ a.sidebar-nav-item {
   cursor: pointer;
 }
 
+.shells-project-main.expandable:hover {
+  opacity: 0.92;
+}
+
 .shells-project-name {
   font-size: var(--font-size-md);
   font-weight: 600;
@@ -5174,6 +5178,7 @@ a.sidebar-nav-item {
   border-radius: var(--radius-md);
   background: var(--bg-secondary);
   color: var(--text-primary);
+  cursor: pointer;
 }
 
 .shells-project-action:hover:not(:disabled) {
@@ -5209,6 +5214,11 @@ a.sidebar-nav-item {
   background: var(--bg-secondary);
   color: inherit;
   text-align: left;
+  cursor: pointer;
+}
+
+.shells-active-link:hover {
+  background: var(--bg-hover);
 }
 
 .shells-active-path {
