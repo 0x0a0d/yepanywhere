@@ -45,6 +45,8 @@ import { ProjectsPage } from "./pages/ProjectsPage";
 import { RelayConnectionGate } from "./pages/RelayConnectionGate";
 import { RelayLoginPage } from "./pages/RelayLoginPage";
 import { SessionPage } from "./pages/SessionPage";
+import { ShellPage } from "./pages/ShellPage";
+import { ShellsPage } from "./pages/ShellsPage";
 import { SettingsLayout } from "./pages/settings";
 import "./styles/index.css";
 
@@ -71,6 +73,7 @@ const APP_ROUTES = (
       <Route path="projects" element={<ProjectsPage />} />
       <Route path="sessions" element={<GlobalSessionsPage />} />
       <Route path="agents" element={<AgentsPage />} />
+      <Route path="shells" element={<ShellsPage />} />
       <Route path="inbox" element={<InboxPage />} />
       <Route path="git-status" element={<GitStatusPage />} />
       <Route path="devices" element={<EmulatorPage />} />
@@ -78,6 +81,7 @@ const APP_ROUTES = (
       <Route path="settings" element={<SettingsLayout />} />
       <Route path="settings/:category" element={<SettingsLayout />} />
       <Route path="new-session" element={<NewSessionPage />} />
+      <Route path="shells/:shellId" element={<ShellPage />} />
       <Route
         path="projects/:projectId/sessions/:sessionId"
         element={<SessionPage />}

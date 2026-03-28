@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import type { GlobalSessionItem } from "../api/client";
 import { useOptionalRemoteConnection } from "../contexts/RemoteConnectionContext";
 import { useDrafts } from "../hooks/useDrafts";
@@ -7,10 +7,12 @@ import { useGlobalSessions } from "../hooks/useGlobalSessions";
 import { useNeedsAttentionBadge } from "../hooks/useNeedsAttentionBadge";
 import { useRecentProjects } from "../hooks/useRecentProjects";
 import { useRemoteBasePath } from "../hooks/useRemoteBasePath";
+import { useShells } from "../hooks/useShells";
 import { useVersion } from "../hooks/useVersion";
 import { useI18n } from "../i18n";
 import { getSessionDisplayTitle, toUrlProjectId } from "../utils";
 import { AgentsNavItem } from "./AgentsNavItem";
+import { ShellsNavItem } from "./ShellsNavItem";
 import { SessionListItem } from "./SessionListItem";
 import {
   SidebarIcons,
@@ -89,6 +91,7 @@ export function Sidebar({
   // Global inbox count
   const inboxCount = useNeedsAttentionBadge();
   const { recentProjects, projects } = useRecentProjects();
+  const { shells } = useShells();
   const newSessionProject = recentProjects[0] ?? projects[0];
 
   const sidebarRef = useRef<HTMLElement>(null);
@@ -390,6 +393,7 @@ export function Sidebar({
               />
             )}
             <AgentsNavItem onClick={onNavigate} basePath={basePath} />
+            <ShellsNavItem onClick={onNavigate} basePath={basePath} />
             <SidebarNavItem
               to="/settings"
               icon={SidebarIcons.settings}

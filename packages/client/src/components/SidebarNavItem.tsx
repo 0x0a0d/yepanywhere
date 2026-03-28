@@ -55,6 +55,22 @@ export const SidebarIcons = {
       <circle cx="16" cy="16" r="1" />
     </svg>
   ),
+  shells: (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 17l6-6-6-6" />
+      <path d="M12 19h8" />
+    </svg>
+  ),
   settings: (
     <svg
       width="16"

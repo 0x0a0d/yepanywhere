@@ -22,6 +22,8 @@ import { LoginPage } from "./pages/LoginPage";
 import { NewSessionPage } from "./pages/NewSessionPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { SessionPage } from "./pages/SessionPage";
+import { ShellPage } from "./pages/ShellPage";
+import { ShellsPage } from "./pages/ShellsPage";
 import { SettingsLayout } from "./pages/settings";
 import "./styles/index.css";
 
@@ -56,6 +58,7 @@ createRoot(rootElement).render(
               <Route path="/projects" element={<ProjectsPage />} />
               <Route path="/sessions" element={<GlobalSessionsPage />} />
               <Route path="/agents" element={<AgentsPage />} />
+              <Route path="/shells" element={<ShellsPage />} />
               <Route path="/inbox" element={<InboxPage />} />
               <Route path="/settings" element={<SettingsLayout />} />
               <Route path="/settings/:category" element={<SettingsLayout />} />
@@ -68,6 +71,7 @@ createRoot(rootElement).render(
               <Route path="/devices" element={<EmulatorPage />} />
               <Route path="/devices/:deviceId" element={<EmulatorPage />} />
               <Route path="/new-session" element={<NewSessionPage />} />
+              <Route path="/shells/:shellId" element={<ShellPage />} />
               <Route
                 path="/projects/:projectId/sessions/:sessionId"
                 element={<SessionPage />}
