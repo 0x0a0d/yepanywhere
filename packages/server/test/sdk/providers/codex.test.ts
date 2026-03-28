@@ -513,6 +513,111 @@ describe("CodexProvider Event Normalization", () => {
   });
 });
 
+describe("CodexProvider MCP elicitation", () => {
+  it("maps form elicitation requests to AskUserQuestion and returns structured content", async () => {
+    const provider = new CodexProvider() as unknown as {
+      handleMcpServerElicitationRequest: (
+        request: { id: number; method: string; params?: unknown },
+        options: { onToolApproval: (...args: unknown[]) => Promise<unknown> },
+        signal: AbortSignal,
+      ) => Promise<{ action: string; content?: Record<string, unknown> }>;
+    };
+
+    const onToolApproval = vi.fn().mockResolvedValue({
+      behavior: "allow",
+      updatedInput: {
+        questions: [],
+        elicitationFields: [
+          { field: "name", questionKey: "Name", type: "string" },
+          { field: "enabled", questionKey: "Enabled", type: "boolean" },
+          { field: "count", questionKey: "Count", type: "integer" },
+        ],
+        answers: {
+          Name: "Alice",
+          Enabled: "Yes",
+          Count: "3",
+        },
+      },
+    });
+
+    const response = await provider.handleMcpServerElicitationRequest(
+      {
+        id: 7,
+        method: "mcpServer/elicitation/request",
+        params: {
+          serverName: "demo-mcp",
+          requestedSchema: {
+            type: "object",
+            properties: {
+              name: { type: "string", title: "Name" },
+              enabled: { type: "boolean", title: "Enabled" },
+              count: { type: "integer", title: "Count" },
+            },
+          },
+        },
+      },
+      { onToolApproval },
+      new AbortController().signal,
+    );
+
+    expect(onToolApproval).toHaveBeenCalledWith(
+      "AskUserQuestion",
+      expect.objectContaining({
+        questions: expect.arrayContaining([
+          expect.objectContaining({ question: "Name", header: "Name" }),
+          expect.objectContaining({ question: "Enabled", header: "Enabled" }),
+          expect.objectContaining({ question: "Count", header: "Count" }),
+        ]),
+      }),
+      expect.any(Object),
+    );
+    expect(response).toEqual({
+      action: "accept",
+      content: {
+        name: "Alice",
+        enabled: true,
+        count: 3,
+      },
+    });
+  });
+
+  it("maps URL elicitation requests to approval flow", async () => {
+    const provider = new CodexProvider() as unknown as {
+      handleMcpServerElicitationRequest: (
+        request: { id: number; method: string; params?: unknown },
+        options: { onToolApproval: (...args: unknown[]) => Promise<unknown> },
+        signal: AbortSignal,
+      ) => Promise<{ action: string; content?: Record<string, unknown> }>;
+    };
+
+    const onToolApproval = vi.fn().mockResolvedValue({ behavior: "allow" });
+    const response = await provider.handleMcpServerElicitationRequest(
+      {
+        id: 8,
+        method: "mcpServer/elicitation/request",
+        params: {
+          serverName: "demo-mcp",
+          message: "Open the consent page",
+          url: "https://example.com/consent",
+        },
+      },
+      { onToolApproval },
+      new AbortController().signal,
+    );
+
+    expect(onToolApproval).toHaveBeenCalledWith(
+      "OpenUrl",
+      {
+        url: "https://example.com/consent",
+        message: "Open the consent page",
+        serverName: "demo-mcp",
+      },
+      expect.any(Object),
+    );
+    expect(response).toEqual({ action: "accept" });
+  });
+});
+
 describe("CodexProvider Configuration", () => {
   it("should accept custom timeout", () => {
     const config: CodexProviderConfig = {
