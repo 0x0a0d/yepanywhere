@@ -20,6 +20,8 @@
     "test:e2e:chromeos": "CHROMEOS_HOST=${CHROMEOS_HOST:-chromeroot} playwright test --grep \"streams ChromeOS\""
   },
   "dependencies": {
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
     "@yep-anywhere/shared": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
