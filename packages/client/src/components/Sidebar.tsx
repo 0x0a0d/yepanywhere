@@ -12,8 +12,8 @@ import { useVersion } from "../hooks/useVersion";
 import { useI18n } from "../i18n";
 import { getSessionDisplayTitle, toUrlProjectId } from "../utils";
 import { AgentsNavItem } from "./AgentsNavItem";
-import { ShellsNavItem } from "./ShellsNavItem";
 import { SessionListItem } from "./SessionListItem";
+import { ShellsNavItem } from "./ShellsNavItem";
 import {
   SidebarIcons,
   SidebarNavItem,

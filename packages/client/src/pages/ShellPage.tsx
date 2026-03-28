@@ -3,7 +3,7 @@ import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api, type ShellInfo } from "../api/client";
+import { type ShellInfo, api } from "../api/client";
 import { PageHeader } from "../components/PageHeader";
 import { useToastContext } from "../contexts/ToastContext";
 import { useRemoteBasePath } from "../hooks/useRemoteBasePath";
@@ -13,7 +13,11 @@ import { useNavigationLayout } from "../layouts";
 const SHELL_STATE_POLL_INTERVAL_MS = 2000;
 const SSE_RECONNECT_BASE_MS = 1000;
 const SSE_RECONNECT_MAX_MS = 10000;
-type ShellConnectionState = "connecting" | "connected" | "reconnecting" | "disconnected";
+type ShellConnectionState =
+  | "connecting"
+  | "connected"
+  | "reconnecting"
+  | "disconnected";
 type ModifierKey = "ctrl" | "alt" | "meta" | "shift";
 type ArrowDirection = "left" | "up" | "down" | "right";
 type DpadStage = "idle" | "once" | "repeat";
@@ -42,9 +46,18 @@ function applyVirtualModifiers(
   modifiers: Record<ModifierKey, VirtualModifierMode | boolean>,
 ): string {
   let next = data;
-  const ctrl = modifiers.ctrl === true || modifiers.ctrl === "armed" || modifiers.ctrl === "locked";
-  const alt = modifiers.alt === true || modifiers.alt === "armed" || modifiers.alt === "locked";
-  const meta = modifiers.meta === true || modifiers.meta === "armed" || modifiers.meta === "locked";
+  const ctrl =
+    modifiers.ctrl === true ||
+    modifiers.ctrl === "armed" ||
+    modifiers.ctrl === "locked";
+  const alt =
+    modifiers.alt === true ||
+    modifiers.alt === "armed" ||
+    modifiers.alt === "locked";
+  const meta =
+    modifiers.meta === true ||
+    modifiers.meta === "armed" ||
+    modifiers.meta === "locked";
   const shift =
     modifiers.shift === true ||
     modifiers.shift === "armed" ||
@@ -91,7 +104,9 @@ export function ShellPage() {
   const arrowPressingRef = useRef(false);
   const arrowOriginRef = useRef<{ x: number; y: number } | null>(null);
   const arrowRepeatDelayRef = useRef(110);
-  const [dpadDirection, setDpadDirection] = useState<ArrowDirection | null>(null);
+  const [dpadDirection, setDpadDirection] = useState<ArrowDirection | null>(
+    null,
+  );
   const [dpadStage, setDpadStage] = useState<DpadStage>("idle");
   const dpadLastTriggeredModeRef = useRef<DpadStage>("idle");
   const dpadLastTriggeredDirectionRef = useRef<ArrowDirection | null>(null);
@@ -182,7 +197,10 @@ export function ShellPage() {
 
     const disposeData = term.onData((data) => {
       if (!shellId) return;
-      const nextData = applyVirtualModifiers(data, effectiveModifiersRef.current);
+      const nextData = applyVirtualModifiers(
+        data,
+        effectiveModifiersRef.current,
+      );
       void api.writeShellInput(shellId, nextData).catch(() => {
         // Ignore transient input failures; shell polling will surface state changes.
       });
@@ -466,7 +484,10 @@ export function ShellPage() {
   const handleSpecialInput = async (data: string) => {
     if (!shellId || shell?.state !== "running") return;
     try {
-      await api.writeShellInput(shellId, applyVirtualModifiers(data, effectiveModifiersRef.current));
+      await api.writeShellInput(
+        shellId,
+        applyVirtualModifiers(data, effectiveModifiersRef.current),
+      );
       terminalRef.current?.focus();
     } catch (error) {
       showToast(
@@ -492,7 +513,9 @@ export function ShellPage() {
   };
 
   const preserveTerminalFocus = (
-    event: React.MouseEvent<HTMLButtonElement> | React.PointerEvent<HTMLButtonElement>,
+    event:
+      | React.MouseEvent<HTMLButtonElement>
+      | React.PointerEvent<HTMLButtonElement>,
   ) => {
     event.preventDefault();
     if (isWideScreen) {
@@ -564,9 +587,17 @@ export function ShellPage() {
     const resolveDirection = (
       clientX: number,
       clientY: number,
-    ): { direction: ArrowDirection | null; distance: number; mode: DpadStage } => {
+    ): {
+      direction: ArrowDirection | null;
+      distance: number;
+      mode: DpadStage;
+    } => {
       if (!arrowOriginRef.current) {
-        return { direction: initialDirection ?? null, distance: 0, mode: "idle" };
+        return {
+          direction: initialDirection ?? null,
+          distance: 0,
+          mode: "idle",
+        };
       }
       const dx = clientX - arrowOriginRef.current.x;
       const dy = clientY - arrowOriginRef.current.y;
@@ -673,7 +704,10 @@ export function ShellPage() {
     window.addEventListener("pointercancel", handleEnd);
   };
 
-  const title = useMemo(() => shell?.projectName ?? t("shellTitle"), [shell, t]);
+  const title = useMemo(
+    () => shell?.projectName ?? t("shellTitle"),
+    [shell, t],
+  );
   const shellMeta = shell ? (
     <>
       <div className="shell-page-meta-left">
@@ -685,7 +719,9 @@ export function ShellPage() {
           <span
             className={`shell-page-state shell-connection-state shell-connection-${connectionState}`}
           >
-            {t(`shellConnection${connectionState[0]?.toUpperCase()}${connectionState.slice(1)}` as never)}
+            {t(
+              `shellConnection${connectionState[0]?.toUpperCase()}${connectionState.slice(1)}` as never,
+            )}
           </span>
         </div>
       </div>
@@ -750,11 +786,15 @@ export function ShellPage() {
           >
             <div className="shell-page-layout">
               {shellMeta ? (
-                <div className="shell-page-meta shell-page-meta-top">{shellMeta}</div>
+                <div className="shell-page-meta shell-page-meta-top">
+                  {shellMeta}
+                </div>
               ) : null}
               <div className="shell-page-control-panel">
                 {shellMeta ? (
-                  <div className="shell-page-meta shell-page-meta-panel">{shellMeta}</div>
+                  <div className="shell-page-meta shell-page-meta-panel">
+                    {shellMeta}
+                  </div>
                 ) : null}
                 {!isWideScreen ? (
                   <div className="shell-special-keys">
@@ -779,7 +819,9 @@ export function ShellPage() {
                         <button
                           type="button"
                           className={`shell-special-key shell-special-dpad ${dpadStage !== "idle" ? "active" : ""}`}
-                          onPointerDown={(event) => startArrowRepeat(event, "up")}
+                          onPointerDown={(event) =>
+                            startArrowRepeat(event, "up")
+                          }
                         >
                           <span
                             className={`shell-dpad-safe-zone ${dpadStage === "once" ? "visible" : ""}`}
@@ -860,17 +902,27 @@ export function ShellPage() {
                 ) : null}
               </div>
               <div className="shell-page-terminal-panel">
-            <div className="shell-terminal shell-terminal-interactive">
-              <div
-                ref={terminalHostRef}
-                className="shell-terminal-xterm"
-                onClick={() => {
-                  if (!isWideScreen) {
-                    terminalRef.current?.focus();
-                  }
-                }}
-              />
-            </div>
+                <div className="shell-terminal shell-terminal-interactive">
+                  <div
+                    ref={terminalHostRef}
+                    className="shell-terminal-xterm"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      if (!isWideScreen) {
+                        terminalRef.current?.focus();
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        if (!isWideScreen) {
+                          terminalRef.current?.focus();
+                        }
+                      }
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>

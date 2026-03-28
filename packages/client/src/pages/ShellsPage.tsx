@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { Project } from "../types";
 import { api } from "../api/client";
 import { PageHeader } from "../components/PageHeader";
 import { useToastContext } from "../contexts/ToastContext";
 import { useProjects } from "../hooks/useProjects";
-import { useShells } from "../hooks/useShells";
 import { useRemoteBasePath } from "../hooks/useRemoteBasePath";
+import { useShells } from "../hooks/useShells";
 import { useI18n } from "../i18n";
 import { useNavigationLayout } from "../layouts";
+import type { Project } from "../types";
 
 export function ShellsPage() {
   const { t } = useI18n();
@@ -22,7 +22,9 @@ export function ShellsPage() {
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
     () => new Set(),
   );
-  const [creatingProjectId, setCreatingProjectId] = useState<string | null>(null);
+  const [creatingProjectId, setCreatingProjectId] = useState<string | null>(
+    null,
+  );
 
   const projectRows = useMemo(() => {
     const byProject = new Map<string, typeof shells>();
@@ -43,7 +45,8 @@ export function ShellsPage() {
         const bRunningCount =
           byProject.get(b.id)?.filter((shell) => shell.state === "running")
             .length ?? 0;
-        if (aRunningCount !== bRunningCount) return bRunningCount - aRunningCount;
+        if (aRunningCount !== bRunningCount)
+          return bRunningCount - aRunningCount;
 
         const aCount = byProject.get(a.id)?.length ?? 0;
         const bCount = byProject.get(b.id)?.length ?? 0;

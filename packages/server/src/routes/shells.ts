@@ -1,8 +1,8 @@
+import { isUrlProjectId } from "@yep-anywhere/shared";
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import type { ProjectScanner } from "../projects/scanner.js";
 import type { ShellService } from "../services/ShellService.js";
-import { isUrlProjectId } from "@yep-anywhere/shared";
 
 export interface ShellRoutesDeps {
   scanner: ProjectScanner;
@@ -51,7 +51,10 @@ export function createShellRoutes(deps: ShellRoutesDeps): Hono {
 
   routes.get("/:shellId/output", (c) => {
     const afterSeq = Number.parseInt(c.req.query("after") ?? "0", 10) || 0;
-    const result = deps.shellService.readOutput(c.req.param("shellId"), afterSeq);
+    const result = deps.shellService.readOutput(
+      c.req.param("shellId"),
+      afterSeq,
+    );
     if (!result) {
       return c.json({ error: "Shell not found" }, 404);
     }

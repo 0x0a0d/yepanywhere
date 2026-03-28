@@ -385,7 +385,7 @@ export const api = {
     fetchJSON<{ project: Project }>(`/projects/${projectId}`),
 
   openProjectTerminal: (projectId: string) =>
-    fetchJSON<{ shell: ShellInfo }>(`/shells`, {
+    fetchJSON<{ shell: ShellInfo }>("/shells", {
       method: "POST",
       body: JSON.stringify({ projectId }),
     }),

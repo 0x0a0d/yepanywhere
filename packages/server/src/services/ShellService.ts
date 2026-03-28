@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { spawn, type IPty } from "node-pty";
+import { type IPty, spawn } from "node-pty";
 
 export type ShellState = "running" | "exited";
 
@@ -168,7 +168,10 @@ export class ShellService {
     return shell ? this.toShellInfo(shell) : null;
   }
 
-  readOutput(shellId: string, afterSeq = 0): { chunks: ShellOutputChunk[] } | null {
+  readOutput(
+    shellId: string,
+    afterSeq = 0,
+  ): { chunks: ShellOutputChunk[] } | null {
     const shell = this.shells.get(shellId);
     if (!shell) return null;
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, type ShellInfo } from "../api/client";
+import { type ShellInfo, api } from "../api/client";
 
 const POLL_INTERVAL_MS = 3000;
 

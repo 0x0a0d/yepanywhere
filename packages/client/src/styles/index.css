@@ -4709,7 +4709,7 @@ a.sidebar-nav-item {
   height: 100%;
   overflow: auto;
   color: #e5e5e5;
-  font: 13px/1.5 Menlo, Monaco, "Courier New", monospace;
+  font: 13px / 1.5 Menlo, Monaco, "Courier New", monospace;
   white-space: pre-wrap;
 }
 
@@ -4866,7 +4866,6 @@ a.sidebar-nav-item {
   line-height: 1;
   font-size: 0.78rem;
 }
-
 
 .shell-dpad-arrow.up {
   top: 0.22rem;
@@ -5103,7 +5102,6 @@ a.sidebar-nav-item {
     flex: 1 1 0;
     min-height: 0;
   }
-
 }
 
 .shells-project-list {
