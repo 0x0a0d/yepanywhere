@@ -857,6 +857,79 @@ describe("Process", () => {
       expect(result.behavior).toBe("allow");
     });
 
+    it("routes OpenUrl approvals through waiting-input in default mode", async () => {
+      const iterator = createMockIterator([]);
+      const process = new Process(iterator, {
+        projectPath: "/test",
+        projectId: "proj-1",
+        sessionId: "sess-1",
+        idleTimeoutMs: 100,
+        permissionMode: "default",
+      });
+
+      const abortController = new AbortController();
+      const toolInput = {
+        url: "https://example.com/consent",
+        message: "Open the consent page",
+        serverName: "demo-mcp",
+      };
+
+      const approvalPromise = process.handleToolApproval("OpenUrl", toolInput, {
+        signal: abortController.signal,
+      });
+
+      expect(process.state.type).toBe("waiting-input");
+
+      const pendingRequest = process.getPendingInputRequest();
+      expect(pendingRequest).not.toBeNull();
+      expect(pendingRequest?.type).toBe("tool-approval");
+      expect(pendingRequest?.toolName).toBe("OpenUrl");
+      expect(pendingRequest?.toolInput).toEqual(toolInput);
+
+      if (!pendingRequest) {
+        throw new Error("pendingRequest should not be null");
+      }
+
+      expect(process.respondToInput(pendingRequest.id, "approve")).toBe(true);
+
+      const result = await approvalPromise;
+      expect(result.behavior).toBe("allow");
+      expect(process.getPendingInputRequest()).toBeNull();
+      expect(process.state.type).toBe("idle");
+    });
+
+    it("propagates denied OpenUrl approvals through waiting-input in default mode", async () => {
+      const iterator = createMockIterator([]);
+      const process = new Process(iterator, {
+        projectPath: "/test",
+        projectId: "proj-1",
+        sessionId: "sess-1",
+        idleTimeoutMs: 100,
+        permissionMode: "default",
+      });
+
+      const abortController = new AbortController();
+      const approvalPromise = process.handleToolApproval(
+        "OpenUrl",
+        { url: "https://example.com/consent" },
+        { signal: abortController.signal },
+      );
+
+      const pendingRequest = process.getPendingInputRequest();
+      expect(pendingRequest).not.toBeNull();
+      expect(pendingRequest?.toolName).toBe("OpenUrl");
+
+      if (!pendingRequest) {
+        throw new Error("pendingRequest should not be null");
+      }
+
+      expect(process.respondToInput(pendingRequest.id, "deny")).toBe(true);
+
+      const result = await approvalPromise;
+      expect(result.behavior).toBe("deny");
+      expect(result.interrupt).toBe(true);
+    });
+
     it("handles concurrent tool approvals (queues them)", async () => {
       const iterator = createMockIterator([]);
       const process = new Process(iterator, {

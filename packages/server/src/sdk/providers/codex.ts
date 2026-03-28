@@ -28,6 +28,7 @@ import type {
   UserMessage,
 } from "../types.js";
 import type { ToolApprovalResult } from "../types.js";
+import { handleMcpServerElicitationRequest } from "./codex-elicitation.js";
 import type {
   AskForApproval as CodexAskForApproval,
   ErrorNotification as CodexErrorNotification,
@@ -1555,6 +1556,14 @@ export class CodexProvider implements AgentProvider {
         return response;
       }
 
+      case "mcpServer/elicitation/request": {
+        return await this.handleMcpServerElicitationRequest(
+          request,
+          options,
+          signal,
+        );
+      }
+
       default: {
         log.warn(
           { method: request.method, requestId: request.id },
@@ -1598,6 +1607,20 @@ export class CodexProvider implements AgentProvider {
     );
 
     return result.behavior === "allow" ? allowDecision : denyDecision;
+  }
+
+  private async handleMcpServerElicitationRequest(
+    request: JsonRpcServerRequest,
+    options: StartSessionOptions,
+    signal: AbortSignal,
+  ): Promise<{
+    action: "accept" | "decline" | "cancel";
+    content?: Record<string, unknown>;
+  }> {
+    return await handleMcpServerElicitationRequest(request, options, signal, {
+      getOptionalString: (value) => this.getOptionalString(value),
+      resolveApprovalDecision: this.resolveApprovalDecision.bind(this),
+    });
   }
 
   private convertNotificationToSDKMessages(
