@@ -173,7 +173,9 @@ export function ShellPage() {
     term.loadAddon(fitAddon);
     term.open(terminalHostRef.current);
     fitAddon.fit();
-    term.focus();
+    if (isWideScreen) {
+      term.focus();
+    }
 
     terminalRef.current = term;
     fitAddonRef.current = fitAddon;
@@ -244,7 +246,7 @@ export function ShellPage() {
       terminalRef.current = null;
       fitAddonRef.current = null;
     };
-  }, [shellId]);
+  }, [isWideScreen, shellId]);
 
   useEffect(() => {
     const syncModifiers = (event: KeyboardEvent) => {
@@ -672,6 +674,44 @@ export function ShellPage() {
   };
 
   const title = useMemo(() => shell?.projectName ?? t("shellTitle"), [shell, t]);
+  const shellMeta = shell ? (
+    <>
+      <div className="shell-page-meta-left">
+        <span className="shell-page-path">{shell.cwd}</span>
+        <div className="shell-page-statuses">
+          <span className={`shell-page-state shell-state-${shell.state}`}>
+            {shell.state === "running" ? t("shellRunning") : t("shellExited")}
+          </span>
+          <span
+            className={`shell-page-state shell-connection-state shell-connection-${connectionState}`}
+          >
+            {t(`shellConnection${connectionState[0]?.toUpperCase()}${connectionState.slice(1)}` as never)}
+          </span>
+        </div>
+      </div>
+      {shell.state === "running" ? (
+        <button
+          type="button"
+          className="shell-action-button"
+          onClick={handleStop}
+          onMouseDown={preserveTerminalFocus}
+          disabled={isClosing}
+        >
+          {isClosing ? t("shellClosing") : t("shellStop" as never)}
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="shell-action-button"
+          onClick={handleRemove}
+          onMouseDown={preserveTerminalFocus}
+          disabled={isClosing}
+        >
+          {isClosing ? t("shellClosing") : t("shellRemove" as never)}
+        </button>
+      )}
+    </>
+  ) : null;
 
   if (!shellId) {
     return <div className="error">{t("shellNotFound")}</div>;
@@ -708,151 +748,131 @@ export function ShellPage() {
                 : "page-content-inner shell-page-content-mobile"
             }
           >
-            {shell && (
-              <div className="shell-page-meta">
-                <div className="shell-page-meta-left">
-                  <span className="shell-page-path">{shell.cwd}</span>
-                  <div className="shell-page-statuses">
-                    <span className={`shell-page-state shell-state-${shell.state}`}>
-                      {shell.state === "running"
-                        ? t("shellRunning")
-                        : t("shellExited")}
-                    </span>
-                    <span
-                      className={`shell-page-state shell-connection-state shell-connection-${connectionState}`}
-                    >
-                      {t(`shellConnection${connectionState[0]?.toUpperCase()}${connectionState.slice(1)}` as never)}
-                    </span>
-                  </div>
-                </div>
-                {shell.state === "running" ? (
-                  <button
-                    type="button"
-                    className="shell-action-button"
-                    onClick={handleStop}
-                    onMouseDown={preserveTerminalFocus}
-                    disabled={isClosing}
-                  >
-                    {isClosing ? t("shellClosing") : t("shellStop" as never)}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="shell-action-button"
-                    onClick={handleRemove}
-                    onMouseDown={preserveTerminalFocus}
-                    disabled={isClosing}
-                  >
-                    {isClosing ? t("shellClosing") : t("shellRemove" as never)}
-                  </button>
-                )}
-              </div>
-            )}
-            <div className="shell-terminal shell-terminal-interactive">
-              <div ref={terminalHostRef} className="shell-terminal-xterm" />
-            </div>
-            {!isWideScreen ? (
-              <div className="shell-special-keys">
-                <div className="shell-special-keys-row">
-                  <div className="shell-special-keys-group">
-                    <button
-                      type="button"
-                      className="shell-special-key"
-                      onMouseDown={preserveTerminalFocus}
-                      onClick={() => void handleEsc()}
-                    >
-                      {t("shellModifierEsc" as never)}
-                    </button>
-                    <button
-                      type="button"
-                      className="shell-special-key"
-                      onMouseDown={preserveTerminalFocus}
-                      onClick={() => void handleSpecialInput("\t")}
-                    >
-                      {t("shellModifierTab" as never)}
-                    </button>
-                    <button
-                      type="button"
-                      className={`shell-special-key shell-special-dpad ${dpadStage !== "idle" ? "active" : ""}`}
-                      onPointerDown={(event) => startArrowRepeat(event, "up")}
-                    >
-                      <span
-                        className={`shell-dpad-safe-zone ${dpadStage === "once" ? "visible" : ""}`}
-                      />
-                      <span
-                        className={`shell-dpad-repeat-zone ${dpadStage === "repeat" ? "visible" : ""}`}
-                      />
-                      <span className="shell-dpad-arrow up">↑</span>
-                      <span className="shell-dpad-arrow right">→</span>
-                      <span className="shell-dpad-arrow down">↓</span>
-                      <span className="shell-dpad-arrow left">←</span>
-                    </button>
-                  </div>
-                  <div className="shell-special-keys-group shell-special-keys-group-right">
-                    <button
-                      type="button"
-                      className="shell-special-key icon-only"
-                      onMouseDown={preserveTerminalFocus}
-                      onClick={() => void handlePaste()}
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
+            <div className="shell-page-layout">
+              {shellMeta ? (
+                <div className="shell-page-meta shell-page-meta-top">{shellMeta}</div>
+              ) : null}
+              <div className="shell-page-control-panel">
+                {shellMeta ? (
+                  <div className="shell-page-meta shell-page-meta-panel">{shellMeta}</div>
+                ) : null}
+                {!isWideScreen ? (
+                  <div className="shell-special-keys">
+                    <div className="shell-special-keys-row">
+                      <div className="shell-special-keys-group">
+                        <button
+                          type="button"
+                          className="shell-special-key"
+                          onMouseDown={preserveTerminalFocus}
+                          onClick={() => void handleEsc()}
+                        >
+                          {t("shellModifierEsc" as never)}
+                        </button>
+                        <button
+                          type="button"
+                          className="shell-special-key"
+                          onMouseDown={preserveTerminalFocus}
+                          onClick={() => void handleSpecialInput("\t")}
+                        >
+                          {t("shellModifierTab" as never)}
+                        </button>
+                        <button
+                          type="button"
+                          className={`shell-special-key shell-special-dpad ${dpadStage !== "idle" ? "active" : ""}`}
+                          onPointerDown={(event) => startArrowRepeat(event, "up")}
+                        >
+                          <span
+                            className={`shell-dpad-safe-zone ${dpadStage === "once" ? "visible" : ""}`}
+                          />
+                          <span
+                            className={`shell-dpad-repeat-zone ${dpadStage === "repeat" ? "visible" : ""}`}
+                          />
+                          <span className="shell-dpad-arrow up">↑</span>
+                          <span className="shell-dpad-arrow right">→</span>
+                          <span className="shell-dpad-arrow down">↓</span>
+                          <span className="shell-dpad-arrow left">←</span>
+                        </button>
+                      </div>
+                      <div className="shell-special-keys-group shell-special-keys-group-right">
+                        <button
+                          type="button"
+                          className="shell-special-key icon-only"
+                          onMouseDown={preserveTerminalFocus}
+                          onClick={() => void handlePaste()}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <rect x="9" y="2" width="6" height="4" rx="1" />
+                            <path d="M9 4H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="shell-special-keys-row">
+                      <button
+                        type="button"
+                        className={`shell-special-key ${effectiveModifiers.ctrl !== "off" ? "active warning" : ""} ${virtualModifiers.ctrl === "locked" ? "holding" : ""}`}
+                        onMouseDown={preserveTerminalFocus}
+                        onClick={ctrlHandlers.onClick}
                       >
-                        <rect x="9" y="2" width="6" height="4" rx="1" />
-                        <path d="M9 4H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2" />
-                      </svg>
-                    </button>
+                        {t("shellModifierCtrl" as never)}
+                      </button>
+                      <div className="shell-special-keys-group shell-special-keys-group-right">
+                        <button
+                          type="button"
+                          className={`shell-special-key ${effectiveModifiers.alt !== "off" ? "active warning" : ""} ${virtualModifiers.alt === "locked" ? "holding" : ""}`}
+                          onMouseDown={preserveTerminalFocus}
+                          onClick={altHandlers.onClick}
+                        >
+                          {t("shellModifierAlt" as never)}
+                        </button>
+                        <button
+                          type="button"
+                          className={`shell-special-key ${effectiveModifiers.meta !== "off" ? "active warning" : ""} ${virtualModifiers.meta === "locked" ? "holding" : ""}`}
+                          onMouseDown={preserveTerminalFocus}
+                          onClick={metaHandlers.onClick}
+                        >
+                          {t("shellModifierMeta" as never)}
+                        </button>
+                        <button
+                          type="button"
+                          className={`shell-special-key ${effectiveModifiers.shift !== "off" ? "active warning" : ""} ${virtualModifiers.shift === "locked" ? "holding" : ""}`}
+                          onMouseDown={preserveTerminalFocus}
+                          onClick={shiftHandlers.onClick}
+                        >
+                          {t("shellModifierShift" as never)}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="shell-special-keys-notice">
+                      {t("shellModifierHoldNotice" as never)}
+                    </div>
                   </div>
-                </div>
-                <div className="shell-special-keys-row">
-                    <button
-                      type="button"
-                      className={`shell-special-key ${effectiveModifiers.ctrl !== "off" ? "active warning" : ""} ${virtualModifiers.ctrl === "locked" ? "holding" : ""}`}
-                      onMouseDown={preserveTerminalFocus}
-                      onClick={ctrlHandlers.onClick}
-                    >
-                      {t("shellModifierCtrl" as never)}
-                    </button>
-                  <div className="shell-special-keys-group shell-special-keys-group-right">
-                    <button
-                      type="button"
-                      className={`shell-special-key ${effectiveModifiers.alt !== "off" ? "active warning" : ""} ${virtualModifiers.alt === "locked" ? "holding" : ""}`}
-                      onMouseDown={preserveTerminalFocus}
-                      onClick={altHandlers.onClick}
-                    >
-                      {t("shellModifierAlt" as never)}
-                    </button>
-                    <button
-                      type="button"
-                      className={`shell-special-key ${effectiveModifiers.meta !== "off" ? "active warning" : ""} ${virtualModifiers.meta === "locked" ? "holding" : ""}`}
-                      onMouseDown={preserveTerminalFocus}
-                      onClick={metaHandlers.onClick}
-                    >
-                      {t("shellModifierMeta" as never)}
-                    </button>
-                    <button
-                      type="button"
-                      className={`shell-special-key ${effectiveModifiers.shift !== "off" ? "active warning" : ""} ${virtualModifiers.shift === "locked" ? "holding" : ""}`}
-                      onMouseDown={preserveTerminalFocus}
-                      onClick={shiftHandlers.onClick}
-                    >
-                      {t("shellModifierShift" as never)}
-                    </button>
-                  </div>
-                </div>
-                <div className="shell-special-keys-notice">
-                  {t("shellModifierHoldNotice" as never)}
-                </div>
+                ) : null}
               </div>
-            ) : null}
+              <div className="shell-page-terminal-panel">
+            <div className="shell-terminal shell-terminal-interactive">
+              <div
+                ref={terminalHostRef}
+                className="shell-terminal-xterm"
+                onClick={() => {
+                  if (!isWideScreen) {
+                    terminalRef.current?.focus();
+                  }
+                }}
+              />
+            </div>
+              </div>
+            </div>
           </div>
         </main>
       </div>

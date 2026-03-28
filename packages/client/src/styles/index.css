@@ -4590,6 +4590,10 @@ a.sidebar-nav-item {
   margin-bottom: var(--space-3);
 }
 
+.shell-page-meta-top {
+  display: none;
+}
+
 .page-content-inner:has(.shell-terminal-interactive) {
   display: flex;
   flex-direction: column;
@@ -4598,6 +4602,33 @@ a.sidebar-nav-item {
 
 .shell-page-root,
 .shell-page-container {
+  min-height: 0;
+}
+
+.shell-page-root .page-scroll-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.shell-page-root .page-content-inner {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.shell-page-layout {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 100%;
+  overflow: hidden;
+}
+
+.shell-page-control-panel,
+.shell-page-terminal-panel {
   min-height: 0;
 }
 
@@ -4685,10 +4716,14 @@ a.sidebar-nav-item {
 .shell-terminal-interactive {
   flex: 1 1 auto;
   padding: 0;
+  min-height: 0;
 }
 
 .shell-terminal-xterm {
   height: 100%;
+  min-height: 0;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
 }
 
 .shell-terminal-xterm .xterm {
@@ -4699,6 +4734,28 @@ a.sidebar-nav-item {
 .shell-terminal-xterm .xterm-screen,
 .shell-terminal-xterm .xterm-rows {
   background: #0b1220 !important;
+}
+
+.shell-terminal-xterm .xterm-viewport {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y !important;
+}
+
+@media (max-width: 1099px) {
+  .shell-terminal-xterm,
+  .shell-terminal-xterm .xterm,
+  .shell-terminal-xterm .xterm-screen,
+  .shell-terminal-xterm .xterm-rows {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  .shell-terminal-xterm .xterm-screen canvas {
+    pointer-events: none;
+  }
 }
 
 .shell-special-keys {
@@ -4860,13 +4917,21 @@ a.sidebar-nav-item {
   .shell-page-root,
   .shell-page-container,
   .shell-page-root .page-scroll-container,
-  .shell-page-root .page-content-inner {
+  .shell-page-root .shell-page-layout {
     height: 100%;
     min-height: 0;
   }
 
   .shell-page-content-mobile {
     padding: 0;
+  }
+
+  .main-content-mobile.shell-page-root .shell-page-layout,
+  .main-content-mobile.shell-page-root .shell-page-control-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    min-height: 0;
   }
 
   .shell-page-meta {
@@ -4884,6 +4949,7 @@ a.sidebar-nav-item {
   }
 
   .shell-terminal {
+    flex: 1 1 0;
     height: auto;
     min-height: 0;
     border-radius: 0;
@@ -4906,6 +4972,7 @@ a.sidebar-nav-item {
   }
 
   .shell-special-keys {
+    margin-top: auto;
     padding: 0 var(--space-3) var(--space-3);
     gap: var(--space-2);
   }
@@ -4913,6 +4980,128 @@ a.sidebar-nav-item {
   .shell-special-keys-group-right {
     margin-left: 0;
   }
+}
+
+@media (max-width: 1099px) and (orientation: portrait) {
+  .main-content-mobile.shell-page-root .shell-page-meta-top {
+    display: flex;
+    order: 0;
+    margin-bottom: 0;
+  }
+
+  .main-content-mobile.shell-page-root .shell-page-meta-panel {
+    display: none;
+  }
+
+  .main-content-mobile.shell-page-root .shell-page-layout {
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .main-content-mobile.shell-page-root .shell-page-control-panel {
+    order: 2;
+    flex: 0 0 auto;
+    min-height: auto;
+  }
+
+  .main-content-mobile.shell-page-root .shell-page-terminal-panel {
+    order: 1;
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .main-content-mobile.shell-page-root .shell-terminal {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+}
+
+@media (max-width: 1099px) and (orientation: landscape) {
+  .main-content-mobile.shell-page-root .shell-page-meta-top {
+    display: none;
+  }
+
+  .main-content-mobile.shell-page-root .shell-page-meta-panel {
+    display: flex;
+  }
+
+  .main-content-mobile.shell-page-root .shell-page-layout {
+    flex: 1 1 0;
+    flex-direction: row;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .main-content-mobile.shell-page-root .shell-page-control-panel {
+    flex: 0 1 20rem;
+    width: auto;
+    min-width: 15rem;
+    max-width: 42%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-height: 0;
+  }
+
+  .main-content-mobile.shell-page-root .shell-page-terminal-panel {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .main-content-mobile.shell-page-root .shell-page-meta {
+    padding: 0 var(--space-2);
+    margin-bottom: 0;
+  }
+
+  .main-content-mobile.shell-page-root .shell-page-statuses {
+    gap: var(--space-1);
+  }
+
+  .main-content-mobile.shell-page-root .shell-special-keys {
+    padding: 0 var(--space-2) var(--space-2);
+    margin-top: 0;
+    flex: 0 0 auto;
+  }
+
+  .main-content-mobile.shell-page-root .shell-special-keys-row {
+    justify-content: flex-start;
+  }
+
+  .main-content-mobile.shell-page-root .shell-special-keys-group {
+    gap: var(--space-1);
+  }
+
+  .main-content-mobile.shell-page-root .shell-special-keys-group-right {
+    margin-left: 0;
+  }
+
+  .main-content-mobile.shell-page-root .shell-special-key.icon-only {
+    margin-left: 0;
+  }
+
+  .main-content-mobile.shell-page-root .shell-terminal {
+    flex: 1 1 0;
+    height: auto;
+    min-height: 0;
+  }
+
+  .main-content-mobile.shell-page-root .shell-terminal-interactive,
+  .main-content-mobile.shell-page-root .shell-terminal-xterm,
+  .main-content-mobile.shell-page-root .shell-terminal-xterm .xterm,
+  .main-content-mobile.shell-page-root .shell-terminal-xterm .xterm-screen,
+  .main-content-mobile.shell-page-root .shell-terminal-xterm .xterm-viewport {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+
 }
 
 .shells-project-list {
