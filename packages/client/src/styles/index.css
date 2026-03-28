@@ -5037,6 +5037,7 @@ a.sidebar-nav-item {
   }
 
   .main-content-mobile.shell-page-root .shell-page-control-panel {
+    order: 2;
     flex: 0 1 20rem;
     width: auto;
     min-width: 15rem;
@@ -5048,6 +5049,7 @@ a.sidebar-nav-item {
   }
 
   .main-content-mobile.shell-page-root .shell-page-terminal-panel {
+    order: 1;
     flex: 1 1 0;
     min-width: 0;
     min-height: 0;
